@@ -1,0 +1,19 @@
+[project]
+name = "auth-service"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "coverage>=7.10.6",
+    "dotenv>=0.9.9",
+    "fastapi>=0.116.1",
+    "pydantic>=2.11.7",
+    "uvicorn>=0.35.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "ruff>=0.12.11",
+]

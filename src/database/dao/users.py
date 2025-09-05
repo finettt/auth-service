@@ -1,0 +1,125 @@
+import logging
+from typing import Any, Dict, List, Optional, Tuple
+from ...database.connection import get_db_connection
+
+
+logger = logging.getLogger(__name__)
+
+
+class UsersDAO:
+    def __init__(self) -> None:
+        self.conn = None
+        self.cur = None
+
+    def __enter__(self):
+        self.conn = get_db_connection()
+        self.cur = self.conn.cursor()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.cur:
+            self.cur.close()
+        if self.conn:
+            if exc_type is None:
+                self.conn.commit()
+            else:
+                self.conn.rollback()
+            self.conn.close()
+
+    def _execute_query(self, query: str, params: Optional[Tuple] = None) -> None:
+        """Helper method to execute a query with error handling."""
+        try:
+            if params:
+                self.cur.execute(query, params)
+            else:
+                self.cur.execute(query)
+        except Exception as e:
+            logger.error(f"Database query failed: {query} with error: {str(e)}")
+            raise
+
+    def _fetch_all_as_dicts(self) -> List[Dict[str, Any]]:
+        columns = [description[0] for description in self.cur.description]
+        return [dict(zip(columns, row)) for row in self.cur.fetchall()]
+
+    def get_all_users(self):
+        try:
+            self._execute_query("SELECT * FROM users")
+            return self._fetch_all_as_dicts()
+        except Exception as e:
+            logger.error(f"Failed to get all orders: {str(e)}")
+            raise
+
+    def create_new_user(self, email: str, password_hash: str) -> int:
+        """Create a new user and return the user ID."""
+        try:
+            self._execute_query(
+                "INSERT INTO users(email, password_hash, created_at) VALUES (?, ?, datetime('now'))",
+                (email, password_hash),
+            )
+            if self.cur and self.cur.lastrowid:
+                return self.cur.lastrowid
+            raise Exception("Failed to get last row ID")
+        except Exception as e:
+            logger.error(f"Failed to create new user: {str(e)}")
+            raise
+
+    def get_user_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
+        """Get a user by their ID."""
+        try:
+            self._execute_query("SELECT * FROM users WHERE id = ?", (user_id,))
+            result = self._fetch_all_as_dicts()
+            return result[0] if result else None
+        except Exception as e:
+            logger.error(f"Failed to get user by ID: {str(e)}")
+            raise
+
+    def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        """Get a user by their email."""
+        try:
+            self._execute_query("SELECT * FROM users WHERE email = ?", (email,))
+            result = self._fetch_all_as_dicts()
+            return result[0] if result else None
+        except Exception as e:
+            logger.error(f"Failed to get user by email: {str(e)}")
+            raise
+
+    def update_user(
+        self,
+        user_id: int,
+        email: Optional[str] = None,
+        password_hash: Optional[str] = None,
+    ) -> bool:
+        """Update a user's information."""
+        try:
+            if email is None and password_hash is None:
+                return False
+
+            updates = []
+            params = []
+
+            if email:
+                updates.append("email = ?")
+                params.append(email)
+
+            if password_hash:
+                updates.append("password_hash = ?")
+                params.append(password_hash)
+
+            params.append(user_id)
+
+            query = f"UPDATE users SET {', '.join(updates)} WHERE id = ?"
+            self._execute_query(query, tuple(params))
+
+            return bool(self.cur and self.cur.rowcount > 0)
+        except Exception as e:
+            logger.error(f"Failed to update user: {str(e)}")
+            raise
+
+    def delete_user(self, user_id: int) -> bool:
+        """Delete a user by their ID."""
+        try:
+            self._execute_query("DELETE FROM users WHERE id = ?", (user_id,))
+            return bool(self.cur and self.cur.rowcount > 0)
+        except Exception as e:
+            logger.error(f"Failed to delete user: {str(e)}")
+            raise
