@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 from ...database.connection import get_db_connection
@@ -30,31 +31,31 @@ class UsersDAO:
         """Helper method to execute a query with error handling."""
         try:
             if params:
-                self.cur.execute(query, params)
+                self.cur.execute(query, params) # type: ignore
             else:
-                self.cur.execute(query)
+                self.cur.execute(query) # type: ignore
         except Exception as e:
             logger.error(f"Database query failed: {query} with error: {str(e)}")
             raise
 
     def _fetch_all_as_dicts(self) -> List[Dict[str, Any]]:
-        columns = [description[0] for description in self.cur.description]
-        return [dict(zip(columns, row)) for row in self.cur.fetchall()]
+        columns = [description[0] for description in self.cur.description] # type: ignore
+        return [dict(zip(columns, row)) for row in self.cur.fetchall()] # type: ignore
 
     def get_all_users(self):
         try:
             self._execute_query("SELECT * FROM users")
             return self._fetch_all_as_dicts()
         except Exception as e:
-            logger.error(f"Failed to get all orders: {str(e)}")
+            logger.error(f"Failed to get all users: {str(e)}")
             raise
 
-    def create_new_user(self, email: str, password_hash: str) -> int:
+    def create_new_user(self, login: str, password_hash: str) -> int:
         """Create a new user and return the user ID."""
         try:
             self._execute_query(
-                "INSERT INTO users(email, password_hash, created_at) VALUES (?, ?, datetime('now'))",
-                (email, password_hash),
+                "INSERT INTO users(login, password_hash, created_at) VALUES (?, ?, datetime('now'))",
+                (login, password_hash),
             )
             if self.cur and self.cur.lastrowid:
                 return self.cur.lastrowid
@@ -72,42 +73,53 @@ class UsersDAO:
         except Exception as e:
             logger.error(f"Failed to get user by ID: {str(e)}")
             raise
-
-    def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
-        """Get a user by their email."""
+    def get_user_by_login(self, login: str) -> Optional[Dict[str, Any]]:
         try:
-            self._execute_query("SELECT * FROM users WHERE email = ?", (email,))
+            self._execute_query("SELECT * FROM users WHERE login = ?", (login,))
             result = self._fetch_all_as_dicts()
             return result[0] if result else None
         except Exception as e:
-            logger.error(f"Failed to get user by email: {str(e)}")
+            logger.error(f"Failed to get user by login: {str(e)}")
             raise
 
     def update_user(
         self,
         user_id: int,
-        email: Optional[str] = None,
+        login: Optional[str] = None,
         password_hash: Optional[str] = None,
+        last_login: Optional[datetime] = None,
     ) -> bool:
         """Update a user's information."""
         try:
-            if email is None and password_hash is None:
+            if login is None and password_hash is None and last_login is None:
                 return False
-
-            updates = []
+            query_parts = ["UPDATE users SET"]
             params = []
-
-            if email:
-                updates.append("email = ?")
-                params.append(email)
-
-            if password_hash:
-                updates.append("password_hash = ?")
+            if login is not None and password_hash is not None:
+                query_parts.append("login = ?, password_hash = ?")
+                params.extend([login, password_hash])
+                if last_login is not None:
+                    query_parts.append(", last_login = ?")
+                    params.append(last_login)
+            elif login is not None:
+                query_parts.append("login = ?")
+                params.append(login)
+                if last_login is not None:
+                    query_parts.append(", last_login = ?")
+                    params.append(last_login)
+            elif password_hash is not None:
+                query_parts.append("password_hash = ?")
                 params.append(password_hash)
-
+                if last_login is not None:
+                    query_parts.append(", last_login = ?")
+                    params.append(last_login)
+            elif last_login is not None:
+                query_parts.append("last_login = ?")
+                params.append(last_login)
+            query_parts.append("WHERE id = ?")
             params.append(user_id)
-
-            query = f"UPDATE users SET {', '.join(updates)} WHERE id = ?"
+            query = " ".join(query_parts)
+            
             self._execute_query(query, tuple(params))
 
             return bool(self.cur and self.cur.rowcount > 0)
