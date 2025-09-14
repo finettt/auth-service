@@ -1,0 +1,9 @@
+DB_PORT=5432
+DB_HOST=localhost
+DB_USER=auth_user
+DB_PASSWORD=password
+DB_TABLE=auth
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+SECRET_KEY=your-secret-key

@@ -1,0 +1,39 @@
+services:
+    postgres:
+        image: postgres
+        environment:
+            POSTGRES_DB: ${DB_TABLE}
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            PGDATA: "/var/lib/postgresql/data/pgdata"
+        ports:
+            - "${DB_PORT}:5432"
+        volumes:
+            - postgres:/var/lib/postgresql/data
+        restart: unless-stopped
+    redis:
+        image: redis:alpine
+        ports:
+            - "6379:6379"
+        restart: unless-stopped
+        volumes:
+            - redis_data:/data
+    auth_api:
+      build:
+        context: .
+        dockerfile: Dockerfile
+      ports:
+          - "8000:8000"
+      environment:
+        - REDIS_HOST=redis
+        - REDIS_PORT=6379
+        - REDIS_DB=0
+        - SECRET_KEY=${SECRET_KEY:-your-secret-key}
+      depends_on:
+        - postgres
+        - redis
+      restart: unless-stopped
+
+volumes:
+  postgres:
+  redis_data:

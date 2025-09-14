@@ -10,8 +10,16 @@ dependencies = [
     "coverage>=7.10.6",
     "dotenv>=0.9.9",
     "fastapi>=0.116.1",
+    "premier>=0.4.10",
     "pydantic>=2.11.7",
     "uvicorn>=0.35.0",
+    "PyJWT>=2.9.0",
+    "psycopg-pool>=3.2.6",
+    "psycopg-binary>=3.2.10",
+    "psycopg>=3.2.10",
+    "redis>=6.4.0",
+    "pydantic-settings>=2.10.1",
+    "pytest-cov>=7.0.0",
 ]
 
 [dependency-groups]
@@ -20,4 +28,7 @@ dev = [
     "httpx>=0.28.1",
     "ruff>=0.12.11",
     "pytest>=8.0.0",
+    "ty>=0.1.0",
+    "pre-commit>=3.8.0",
 ]
+    

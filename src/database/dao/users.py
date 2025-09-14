@@ -31,16 +31,16 @@ class UsersDAO:
         """Helper method to execute a query with error handling."""
         try:
             if params:
-                self.cur.execute(query, params) # type: ignore
+                self.cur.execute(query, params)  # type: ignore
             else:
-                self.cur.execute(query) # type: ignore
+                self.cur.execute(query)  # type: ignore
         except Exception as e:
             logger.error(f"Database query failed: {query} with error: {str(e)}")
             raise
 
     def _fetch_all_as_dicts(self) -> List[Dict[str, Any]]:
-        columns = [description[0] for description in self.cur.description] # type: ignore
-        return [dict(zip(columns, row)) for row in self.cur.fetchall()] # type: ignore
+        columns = [description[0] for description in self.cur.description]  # type: ignore
+        return [dict(zip(columns, row)) for row in self.cur.fetchall()]  # type: ignore
 
     def get_all_users(self):
         try:
@@ -54,11 +54,13 @@ class UsersDAO:
         """Create a new user and return the user ID."""
         try:
             self._execute_query(
-                "INSERT INTO users(login, password_hash, created_at) VALUES (?, ?, datetime('now'))",
+                "INSERT INTO users(login, password_hash, created_at) VALUES (%s, %s, NOW()) RETURNING id",
                 (login, password_hash),
             )
-            if self.cur and self.cur.lastrowid:
-                return self.cur.lastrowid
+            if self.cur:
+                result = self.cur.fetchone()
+                if result:
+                    return result[0]
             raise Exception("Failed to get last row ID")
         except Exception as e:
             logger.error(f"Failed to create new user: {str(e)}")
@@ -67,15 +69,16 @@ class UsersDAO:
     def get_user_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
         """Get a user by their ID."""
         try:
-            self._execute_query("SELECT * FROM users WHERE id = ?", (user_id,))
+            self._execute_query("SELECT * FROM users WHERE id = %s", (user_id,))
             result = self._fetch_all_as_dicts()
             return result[0] if result else None
         except Exception as e:
             logger.error(f"Failed to get user by ID: {str(e)}")
             raise
+
     def get_user_by_login(self, login: str) -> Optional[Dict[str, Any]]:
         try:
-            self._execute_query("SELECT * FROM users WHERE login = ?", (login,))
+            self._execute_query("SELECT * FROM users WHERE login = %s", (login,))
             result = self._fetch_all_as_dicts()
             return result[0] if result else None
         except Exception as e:
@@ -96,30 +99,30 @@ class UsersDAO:
             query_parts = ["UPDATE users SET"]
             params = []
             if login is not None and password_hash is not None:
-                query_parts.append("login = ?, password_hash = ?")
+                query_parts.append("login = %s, password_hash = %s")
                 params.extend([login, password_hash])
                 if last_login is not None:
-                    query_parts.append(", last_login = ?")
+                    query_parts.append(", last_login = %s")
                     params.append(last_login)
             elif login is not None:
-                query_parts.append("login = ?")
+                query_parts.append("login = %s")
                 params.append(login)
                 if last_login is not None:
-                    query_parts.append(", last_login = ?")
+                    query_parts.append(", last_login = %s")
                     params.append(last_login)
             elif password_hash is not None:
-                query_parts.append("password_hash = ?")
+                query_parts.append("password_hash = %s")
                 params.append(password_hash)
                 if last_login is not None:
-                    query_parts.append(", last_login = ?")
+                    query_parts.append(", last_login = %s")
                     params.append(last_login)
             elif last_login is not None:
-                query_parts.append("last_login = ?")
+                query_parts.append("last_login = %s")
                 params.append(last_login)
-            query_parts.append("WHERE id = ?")
+            query_parts.append("WHERE id = %s")
             params.append(user_id)
             query = " ".join(query_parts)
-            
+
             self._execute_query(query, tuple(params))
 
             return bool(self.cur and self.cur.rowcount > 0)
@@ -130,7 +133,7 @@ class UsersDAO:
     def delete_user(self, user_id: int) -> bool:
         """Delete a user by their ID."""
         try:
-            self._execute_query("DELETE FROM users WHERE id = ?", (user_id,))
+            self._execute_query("DELETE FROM users WHERE id = %s", (user_id,))
             return bool(self.cur and self.cur.rowcount > 0)
         except Exception as e:
             logger.error(f"Failed to delete user: {str(e)}")

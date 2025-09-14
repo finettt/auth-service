@@ -1,0 +1,9 @@
+premier:
+  paths:
+    - pattern: "/api/*"
+      features:
+        rate_limit:
+          quota: 100
+          duration: 60
+        monitoring:
+          log_threshold: 5.0

@@ -1,12 +1,9 @@
-import sqlite3 as sql
-import os
-from dotenv import load_dotenv
+import psycopg
+from src.database.settings import settings
 
-load_dotenv()
-DATABASE_PATH = os.environ.get("DATABASE_PATH") or ".data/auth.db"
+DATABASE_URL = f"{settings.DB_HOSTNAME}://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_TABLE}"
 
 
 def get_db_connection():
-    conn = sql.connect(DATABASE_PATH)
-    conn.row_factory = sql.Row
+    conn = psycopg.connect(DATABASE_URL)
     return conn
