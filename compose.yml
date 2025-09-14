@@ -1,18 +1,22 @@
 services:
     postgres:
         image: postgres
+        env_file:
+            - .db.env
         environment:
             POSTGRES_DB: ${DB_TABLE}
             POSTGRES_USER: ${DB_USER}
             POSTGRES_PASSWORD: ${DB_PASSWORD}
             PGDATA: "/var/lib/postgresql/data/pgdata"
         ports:
-            - "${DB_PORT}:5432"
+            - "5432:5432"
         volumes:
             - postgres:/var/lib/postgresql/data
         restart: unless-stopped
     redis:
         image: redis:alpine
+        env_file:
+            - .db.env
         ports:
             - "6379:6379"
         restart: unless-stopped
