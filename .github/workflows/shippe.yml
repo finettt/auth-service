@@ -13,7 +13,7 @@ jobs:
           fetch-depth: 0
 
       - name: Shippie 🚢
-        uses: mattzcarey/shippie@v0.20.0
+        uses: mattzcarey/shippie@v0.10.0
         with:
           GITHUB_TOKEN: ${{ github.token }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

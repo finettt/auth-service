@@ -18,7 +18,7 @@ COPY  . .
 RUN  uv export --format=requirements-txt --no-dev > requirements.txt
 RUN chmod +x ./entrypoint.sh
 
-FROM base AS production
+FROM base AS runtime
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1

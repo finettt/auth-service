@@ -41,6 +41,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pyjwt" },
+    { name = "pytest-cov" },
     { name = "redis" },
     { name = "uvicorn" },
 ]
@@ -51,7 +52,6 @@ dev = [
     { name = "httpx" },
     { name = "pre-commit" },
     { name = "pytest" },
-    { name = "pytest-cov" },
     { name = "ruff" },
     { name = "ty" },
 ]
@@ -69,6 +69,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.11.7" },
     { name = "pydantic-settings", specifier = ">=2.10.1" },
     { name = "pyjwt", specifier = ">=2.9.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "redis", specifier = ">=6.4.0" },
     { name = "uvicorn", specifier = ">=0.35.0" },
 ]
@@ -79,7 +80,6 @@ dev = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "pre-commit", specifier = ">=3.8.0" },
     { name = "pytest", specifier = ">=8.0.0" },
-    { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "ruff", specifier = ">=0.12.11" },
     { name = "ty", specifier = ">=0.0.1a20" },
 ]
