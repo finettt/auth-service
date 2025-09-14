@@ -130,12 +130,12 @@ src/
    DB_NAME=auth_db
    DB_USER=your_db_user
    DB_PASSWORD=your_db_password
-   
+
    # Redis
    REDIS_HOST=localhost
    REDIS_PORT=6379
    REDIS_DB=0
-   
+
    # JWT
    SECRET_KEY=your-secret-key-here
    ```

@@ -23,31 +23,28 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         user_id = payload.get("user_id")
         login = payload.get("sub")
-        
+
         if not user_id or not login:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token payload"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload"
             )
-        
+
         # Validate token exists in Redis
         with TokensDAO() as token_dao:
             if not token_dao.is_token_valid(token):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Token not found or expired"
+                    detail="Token not found or expired",
                 )
-        
+
         return {"user_id": user_id, "login": login}
     except jwt.ExpiredSignatureError:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has expired"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired"
         )
     except jwt.JWTError:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
 
 
@@ -91,7 +88,7 @@ def login_account(request: AuthRequestDTO):
 def logout_account(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Logout user by removing their token from Redis."""
     token = credentials.credentials
-    
+
     # Remove token from Redis
     with TokensDAO() as token_dao:
         if token_dao.delete_token(token):
@@ -100,8 +97,7 @@ def logout_account(credentials: HTTPAuthorizationCredentials = Depends(security)
             )
         else:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to logout token"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to logout token"
             )
 
 
@@ -113,11 +109,11 @@ def delete_account(request: AuthRequestDTO):
             return JSONResponse(
                 status_code=401, content={"message": "Invalid credentials"}
             )
-        
+
         # Revoke all user tokens before deleting account
         with TokensDAO() as token_dao:
             token_dao.revoke_user_tokens(user["id"])
-        
+
         dao.delete_user(user["id"])
         return JSONResponse(
             status_code=200, content={"message": "User deleted successfully"}
@@ -131,10 +127,9 @@ def get_profile(current_user: dict = Depends(get_current_user)):
         user = dao.get_user_by_id(current_user["user_id"])
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
-        
+
         # Remove sensitive data
         user.pop("password_hash", None)
         return user

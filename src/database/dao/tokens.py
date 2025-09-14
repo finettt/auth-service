@@ -28,9 +28,9 @@ class TokensDAO:
             token_data = {
                 "user_id": user_id,
                 "expires_at": expires_at.isoformat(),
-                "created_at": datetime.now().isoformat()
+                "created_at": datetime.now().isoformat(),
             }
-            
+
             key = f"token:{token}"
             self.redis_conn.setex(key, expires_in_hours * 3600, json.dumps(token_data))
             return True
@@ -66,7 +66,7 @@ class TokensDAO:
             token_data = self.get_token(token)
             if not token_data:
                 return False
-            
+
             expires_at = datetime.fromisoformat(token_data["expires_at"])
             return datetime.now() < expires_at
         except Exception as e:
@@ -79,18 +79,20 @@ class TokensDAO:
             pattern = "token:*"
             keys = self.redis_conn.keys(pattern)
             user_tokens = []
-            
+
             for key in keys:
                 token_data = self.redis_conn.get(key)
                 if token_data:
                     data = json.loads(token_data)
                     if data.get("user_id") == user_id:
-                        user_tokens.append({
-                            "token": key.replace("token:", ""),
-                            "expires_at": data.get("expires_at"),
-                            "created_at": data.get("created_at")
-                        })
-            
+                        user_tokens.append(
+                            {
+                                "token": key.replace("token:", ""),
+                                "expires_at": data.get("expires_at"),
+                                "created_at": data.get("created_at"),
+                            }
+                        )
+
             return user_tokens
         except Exception as e:
             logger.error(f"Failed to get user tokens: {str(e)}")
@@ -102,7 +104,7 @@ class TokensDAO:
             pattern = "token:*"
             keys = self.redis_conn.keys(pattern)
             revoked_count = 0
-            
+
             for key in keys:
                 token_data = self.redis_conn.get(key)
                 if token_data:
@@ -110,7 +112,7 @@ class TokensDAO:
                     if data.get("user_id") == user_id:
                         self.redis_conn.delete(key)
                         revoked_count += 1
-            
+
             return revoked_count
         except Exception as e:
             logger.error(f"Failed to revoke user tokens: {str(e)}")
