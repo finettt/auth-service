@@ -1,5 +1,4 @@
 import unittest.mock
-import pytest
 import json
 from datetime import datetime, timedelta
 from src.database.dao.tokens import TokensDAO

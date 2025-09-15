@@ -1,5 +1,4 @@
 import unittest.mock
-import datetime
 from fastapi.testclient import TestClient
 from src.app import app
 from src.routes.api import get_current_user

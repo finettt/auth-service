@@ -1,4 +1,3 @@
-import pytest
 from src.crypto.utils import encrypt_password, verify_password
 
 
