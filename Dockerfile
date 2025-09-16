@@ -15,13 +15,16 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN  uv sync --frozen
 COPY  . .
+COPY gateway.py ./gateway.py
+COPY premier.yml ./premier.yml
 RUN  uv export --format=requirements-txt --no-dev > requirements.txt
 RUN chmod +x ./entrypoint.sh
 
 FROM base AS runtime
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    UV_CACHE_DIR=/tmp/uv-cache
 
 WORKDIR /app
 COPY --from=builder /etc/passwd /etc/passwd
@@ -30,11 +33,14 @@ COPY --from=builder /bin/uv /bin/uv
 COPY --from=builder  /app/src/ /app/src/
 COPY --from=builder  /app/requirements.txt /app/
 COPY --from=builder  /app/entrypoint.sh /app/
+COPY --from=builder  /app/gateway.py /app/
+COPY --from=builder  /app/premier.yml /app/
+RUN mkdir -p /tmp/uv-cache && chown -R appuser:appuser /tmp/uv-cache
 RUN  uv pip install --system -r requirements.txt
 RUN rm -rf /tmp/uv-cache && \
     find /usr/local -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 USER appuser
-EXPOSE 8000
+EXPOSE 443
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 ENTRYPOINT ["./entrypoint.sh"]

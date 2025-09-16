@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
     postgres:
         image: postgres:15-alpine
@@ -8,8 +10,6 @@ services:
             POSTGRES_USER: ${DB_USER:-auth_user}
             POSTGRES_PASSWORD: ${DB_PASSWORD}
             PGDATA: "/var/lib/postgresql/data/pgdata"
-        ports:
-            - "5432:5432"
         volumes:
             - postgres:/var/lib/postgresql/data
         restart: unless-stopped
@@ -17,14 +17,21 @@ services:
             test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-auth_user} -d ${DB_TABLE:-auth}"]
             interval: 30s
             timeout: 10s
-            retries: 3
-            start_period: 5s
+            retries: 5
+            start_period: 30s
+        deploy:
+            resources:
+                limits:
+                    cpus: '1.0'
+                    memory: 1G
+                reservations:
+                    cpus: '0.5'
+                    memory: 512M
+
     redis:
         image: redis:7-alpine
         env_file:
             - .db.env
-        ports:
-            - "6379:6379"
         restart: unless-stopped
         volumes:
             - redis_data:/data
@@ -32,8 +39,17 @@ services:
             test: ["CMD", "redis-cli", "ping"]
             interval: 30s
             timeout: 10s
-            retries: 3
-            start_period: 5s
+            retries: 5
+            start_period: 30s
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.5'
+                    memory: 512M
+                reservations:
+                    cpus: '0.2'
+                    memory: 256M
+
     auth_api:
       build:
         context: .
@@ -49,10 +65,10 @@ services:
         - SECRET_KEY=${SECRET_KEY}
         - SSL_CERTFILE=/app/.ssl/cert.pem
         - SSL_KEYFILE=/app/.ssl/key.pem
-        - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+        - LOG_LEVEL=${LOG_LEVEL:-INFO}
         - PYTHONUNBUFFERED=1
       volumes:
-        - ./.ssl:/app/.ssl
+        - ./ssl:/app/.ssl:ro
       depends_on:
         postgres:
           condition: service_healthy
@@ -64,13 +80,35 @@ services:
         interval: 30s
         timeout: 10s
         retries: 3
-        start_period: 10s
+        start_period: 40s
+      deploy:
+        resources:
+            limits:
+                cpus: '2.0'
+                memory: 2G
+            reservations:
+                cpus: '1.0'
+                memory: 1G
+        replicas: 2
+        update_config:
+            parallelism: 1
+            delay: 10s
+        rollback_config:
+            parallelism: 1
+            delay: 10s
+        restart_policy:
+            condition: on-failure
+            delay: 5s
+            max_attempts: 3
+            window: 120s
 
 volumes:
   postgres:
+    driver: local
   redis_data:
+    driver: local
 
 networks:
   default:
-    name: auth-service-dev-network
+    name: auth-service-network
     driver: bridge
