@@ -1,4 +1,4 @@
-FROM python:3.12-bookworm AS base
+FROM python:3.14-bookworm AS base
 RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
