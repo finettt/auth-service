@@ -80,7 +80,7 @@ def login_account(request: AuthRequestDTO):
             token_dao.store_token(user["id"], token)
 
         return JSONResponse(
-            status_code=200, content={"access_token": token, "token_type": "bearer"}
+            status_code=200, content={"access_token": token, "token_type": "bearer"}  # nosec B105
         )
 
 
